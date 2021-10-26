@@ -32,10 +32,10 @@ app.use(cookieParser());
 // PARTIE SESSIONS
 const oneDay = 1000 * 60 * 60 * 24;
 app.use(sessions({
-    secret: "IUBhdeiNDEAhdfAEF80H",
-    saveUninitialized:true,
-    cookie: { maxAge: oneDay },
-    resave: false 
+	secret: "IUBhdeiNDEAhdfAEF80H",
+	saveUninitialized: true,
+	cookie: { maxAge: oneDay },
+	resave: false
 }));
 
 /* API USERS */
@@ -75,32 +75,44 @@ app.post('/api/login', async function (req, res) {
 			if (!user) return res.redirect('/sign-up');
 			bcrypt.compare(req.body.password, user.password, function (err, result) {
 				if (!result) return res.redirect('/login')
+				
 				req.session.user = {
 					id: user._id,
 					username: user.username
-				}
+				};
 				res.redirect('/home');
 			})
 		})
 });
 
 // GET pour lister les users
+app.get("/api/list_users", async function(req, res) {
+    await User.find({}).then(function (users) {
+        var listUsers = [];
 
-app.get('/api/list_users', async function (req, res) {
-	await User.find({}).then((users) => {
-		var listUsers = [];
-		for (let index = 0; index < users.length; index++) {
+        for (let index = 0; index < users.length; index++) {
 			const element = users[index];
-			
-			listUsers.push({
-				id: element._id,
-				username : element.username,
-			})
-			if (index == users.length-1) {
-				return res.json({total: users.lenght, users: listUsers})
-			}
-		}
-	})
+
+            if (req.session.user && req.query.no_owner) {
+                if (element._id != req.session.user.id) {
+                    listUsers.push({
+                        id: element._id,
+                        username: element.username
+                    });
+                }
+            } else {
+                listUsers.push({
+                    id: element._id,
+                    username: element.username
+                });
+            }
+
+            if (index == users.length-1) {
+                return res.json({total: listUsers.length, users: listUsers});
+            }
+        }
+        return res.json({total: listUsers.length, users: listUsers});
+    })
 })
 
 // GET pour lister toutes les parties
@@ -109,7 +121,7 @@ app.get('/api/list_parties', async function (req, res) {
 		var listParties = [];
 		for (let index = 0; index < parties.length; index++) {
 			const element = parties[index];
-			
+
 			listParties.push({
 				id: element._id,
 				round: element.round,
@@ -117,53 +129,61 @@ app.get('/api/list_parties', async function (req, res) {
 				J2: element.J2,
 				specs: element.specs
 			})
-			if (index == parties.length-1) {
-				return res.json({total: parties.lenght, parties: listParties})
+			if (index == parties.length - 1) {
+				return res.json({ total: parties.lenght, parties: listParties })
 			}
 		}
-		return res.json({total: parties.lenght, parties: listParties})
+		return res.json({ total: parties.lenght, parties: listParties })
 	})
 })
 
+app.post('api/party/:id'), async function (req, res) {
+	
+}
 
 
 
 
 
 // PARTIE RENDERING HTML
-	//GET menu 
-	app.get('/', function(req, res) {
-		res.render("index.ejs", { req: req, title: "Accueil"})
-	});
+//GET menu 
+app.get('/', function (req, res) {
+	res.render("index.ejs", { req: req, title: "Accueil" })
+});
 
 
-	// GET pour le login
-	app.get('/login', function (req, res) {
-		res.render("login.ejs", { req: req, title: "Connection au jeu"})
-	});
-
-	// GET pour le signup
-	app.get('/sign-up', function (req, res) {
-		res.send("ok_sign_up")
-	});
-
-	// GET pour le home
-	app.get('/home', function (req, res) {
-		res.send("ok_home")
-	});
-
-	// GET pour les 
-	app.get('/app/parties_list', function (req, res) {
-		res.send('POST request to the homepage');
-	});
-
-	// GEt pour le logout
-	app.get('/logout', function(req, res) {
-		req.session.destroy();
-		res.redirect('/')
-	});
-
-	app.listen(4000, () => {
-		console.log("Serveur démarré sur le port 4000")
+// GET pour le login
+app.get('/login', function (req, res) {
+	if (req.session.user) {
+		return res.redirect('/home');
 	}
-	)
+	res.render("login.ejs", { req: req, title: "Connection au jeu" })
+});
+
+// GET pour le signup
+app.get('/sign-up', function (req, res) {
+	if (req.session.user) {
+		return res.redirect('/home');
+	}
+	res.render("signup.ejs", { req: req, title: "Bienvenue sur le jeu Betcha"})
+});
+
+// GET pour le home
+app.get('/home', function (req, res) {
+	if (!req.session.user) {
+		return res.redirect('/login');
+	}
+	res.render("home.ejs", { req: req, title: "Bienvenue sur le jeu Betcha"})
+});
+
+
+// GEt pour le logout
+app.get('/logout', function (req, res) {
+	req.session.destroy();
+	res.redirect('/')
+});
+
+app.listen(4000, () => {
+	console.log("Serveur démarré sur le port 4000")
+}
+)
