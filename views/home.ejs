@@ -23,12 +23,27 @@
     </header>
     <br>
     <div class="container-sm text-center">
-    <form action="api/party" method="get">
         <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
             Party's creation
         </button>
-    </form>
     </div>
+    <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">Round</th>
+            <th scope="col">J1</th>
+            <th scope="col">J2</th>
+            <th scope="col"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">1</th>
+            <td>Fabien</td>
+            <td>Prout</td>
+          </tr>
+        </tbody>
+      </table>
             <!-- Modal -->
         <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
             aria-labelledby="staticBackdropLabel" aria-hidden="true">
@@ -38,6 +53,7 @@
                         <h5 class="modal-title" id="staticBackdropLabel">Party creation</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
+                    <form action="/api/party" method="post">
                     <div class="modal-body">
                         <h6 class="subtitle" id="LabelSubtitle">Choose your opponant</h6>
                         <select class="form-select" name="opposant" id="opposant">
@@ -45,12 +61,14 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <button type="button" class="btn btn-primary">Create Party</button>
+                        <button type="submit" class="btn btn-primary">Create Party</button>
                     </div>
+                    </form>
                 </div>
             </div>
         </div>
     </form>
+    <script src="https://moment.github.io/luxon/global/luxon.min.js"></script>
     <script src="./assets/js/home.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p"

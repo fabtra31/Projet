@@ -20,7 +20,7 @@ db.once('open', function () {
 
 // APPEL Des fichiers de creation BD
 const User = mongoose.model('User', require('./MongoDB/users'));
-const Parties = mongoose.model('Game', require('./MongoDB/parties'))
+const Parties = mongoose.model('Partie', require('./MongoDB/parties'))
 
 // APPEL DES MIDDLEWARE
 app.use(express.urlencoded({ extended: true }))
@@ -75,7 +75,7 @@ app.post('/api/login', async function (req, res) {
 			if (!user) return res.redirect('/sign-up');
 			bcrypt.compare(req.body.password, user.password, function (err, result) {
 				if (!result) return res.redirect('/login')
-				
+
 				req.session.user = {
 					id: user._id,
 					username: user.username
@@ -86,38 +86,43 @@ app.post('/api/login', async function (req, res) {
 });
 
 // GET pour lister les users
-app.get("/api/list_users", async function(req, res) {
-    await User.find({}).then(function (users) {
-        var listUsers = [];
+app.get("/api/list_users", async function (req, res) {
+	await User.find({}).then(function (users) {
+		var listUsers = [];
 
-        for (let index = 0; index < users.length; index++) {
+		for (let index = 0; index < users.length; index++) {
 			const element = users[index];
 
-            if (req.session.user && req.query.no_owner) {
-                if (element._id != req.session.user.id) {
-                    listUsers.push({
-                        id: element._id,
-                        username: element.username
-                    });
-                }
-            } else {
-                listUsers.push({
-                    id: element._id,
-                    username: element.username
-                });
-            }
+			if (req.session.user && req.query.no_owner) {
+				if (element._id != req.session.user.id) {
+					listUsers.push({
+						id: element._id,
+						username: element.username
+					});
+				}
+			} else {
+				listUsers.push({
+					id: element._id,
+					username: element.username
+				});
+			}
 
-            if (index == users.length-1) {
-                return res.json({total: listUsers.length, users: listUsers});
-            }
-        }
-        return res.json({total: listUsers.length, users: listUsers});
-    })
+			if (index == users.length - 1) {
+				return res.json({ total: listUsers.length, users: listUsers });
+			}
+		}
+		return res.json({ total: listUsers.length, users: listUsers });
+	})
 })
 
 // GET pour lister toutes les parties
 app.get('/api/list_parties', async function (req, res) {
-	await Parties.find({}).then((parties) => {
+	const validStatus = ["WAITING", "STARTED", "FINISHED"];
+	let parameters = {};
+	if (req.query.status && validStatus.includes(req.query.status)){
+		parameters.status = req.query.status;
+	}
+	await Parties.find(parameters).then((parties) => {
 		var listParties = [];
 		for (let index = 0; index < parties.length; index++) {
 			const element = parties[index];
@@ -127,22 +132,89 @@ app.get('/api/list_parties', async function (req, res) {
 				round: element.round,
 				J1: element.J1,
 				J2: element.J2,
-				specs: element.specs
-			})
+				specs: element.specs,
+				status: element.status,
+				pointer: element.pointer
+			});
 			if (index == parties.length - 1) {
-				return res.json({ total: parties.lenght, parties: listParties })
+				return res.json({ total: parties.lenght, parties: listParties });
 			}
 		}
-		return res.json({ total: parties.lenght, parties: listParties })
+		return res.json({ total: parties.lenght, parties: []});
 	})
 })
 
-app.post('api/party/:id'), async function (req, res) {
-	
-}
+app.get('/api/party/:id', async function (req, res) {
+	if (!req.session.user) {
+		return res.sendStatus(401)
+	}
+	await Parties.findOne({
+		where: {
+			_id: req.params.id
+		}
+	}).then(function (party) {
+		if (!party){
+			return res.sendStatus(404)
+		}
+		return res.json({party})
+	});
+})
 
 
+app.post('/api/party', async function (req, res) {
+	if (!req.session.user) return res.sendStatus(401);
+	const party = new Parties({
+		J1: {
+			id: req.session.user.id,
+		},
+		J2: {
+			id: req.body.opposant,
+		}
+	});
+	let result = await party.save();
 
+	if (!result) return res.redirect("/home");
+	console.log('Creation of the party');
+	return res.redirect("/home");
+})
+
+
+app.get('/api/user',async function (req, res) {
+	if (!req.session.user) return res.sendStatus(401);
+	let parameters = {
+		where: { _id: req.session.user.id },
+	};
+
+	await User.findOne(parameters).then((user) => {
+		if (!user) {
+			return res.sendStatus(404)
+		}
+		let listData = {};
+		listData.id = user._id;
+		listData.username = user.username;
+		listData.stats = user.stats;
+		
+		return res.json(listData);
+	})
+});
+
+app.get('/api/user/:id', async function (req, res) {
+	let parameters = {
+		where: { _id: req.params.id },
+	};
+
+	await User.findOne(parameters).then((user) => {
+		if (!user) {
+			return res.sendStatus(404)
+		}
+		let listData = {};
+		listData.id = user._id;
+		listData.username = user.username;
+		listData.stats = user.stats;
+		
+		return res.json(listData);
+	})
+});
 
 
 // PARTIE RENDERING HTML
@@ -150,6 +222,7 @@ app.post('api/party/:id'), async function (req, res) {
 app.get('/', function (req, res) {
 	res.render("index.ejs", { req: req, title: "Accueil" })
 });
+//GET pour les pseudos
 
 
 // GET pour le login
@@ -165,7 +238,7 @@ app.get('/sign-up', function (req, res) {
 	if (req.session.user) {
 		return res.redirect('/home');
 	}
-	res.render("signup.ejs", { req: req, title: "Bienvenue sur le jeu Betcha"})
+	res.render("signup.ejs", { req: req, title: "Bienvenue sur le jeu Betcha" })
 });
 
 // GET pour le home
@@ -173,15 +246,32 @@ app.get('/home', function (req, res) {
 	if (!req.session.user) {
 		return res.redirect('/login');
 	}
-	res.render("home.ejs", { req: req, title: "Bienvenue sur le jeu Betcha"})
+	res.render("home.ejs", { req: req, title: "Bienvenue sur le jeu Betcha" })
 });
 
+//Get pour les parties 
+app.get('/party/:id', async function (req, res) {
+	if (!req.session.user) {
+		return res.redirect('/login')
+	}
+	await Parties.findOne({
+		where: {
+			_id: req.params.id
+		}
+	}).then(function (party) {
+		if (!party){
+			return res.redirect('/home')
+		}
+		return res.render("party.ejs", { req: req, title: "Partie J1 Vs J2" })
+	});
+})
 
 // GEt pour le logout
 app.get('/logout', function (req, res) {
 	req.session.destroy();
 	res.redirect('/')
 });
+
 
 app.listen(4000, () => {
 	console.log("Serveur démarré sur le port 4000")
