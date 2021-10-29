@@ -28,10 +28,12 @@ if (window.location.pathname.startsWith("/home")) {
 
     let new_clock = DateTime.now().set(parameters);
     getParties();
+    getInvites()
 
     setTimeout(async () => {
         setInterval(async () => {
             await getParties();
+            await getInvites();
         }, interval * 1000);
     }, new_clock.diff(DateTime.now()).toObject().milliseconds);
 
@@ -39,27 +41,201 @@ if (window.location.pathname.startsWith("/home")) {
 
 //partie refresh des parties en cours + listage
 async function getParties() {
+    const table = document.querySelector('#listparties');
+    let actualsItems = [];
 
-    fetch("/api/list_parties?type=STARTED")
-        .then(response => response.json())
-        .then(result => {
-            var table = document.querySelector('table');
-            for (var i = 0; i < result.length; i++) {
+    for (let index = 0; index < table.children.length; index++) {
+        const element = table.children[index];
+        actualsItems.push(element.id)
+    }
+    
+    await fetch("/api/list_parties?type=STARTED")
+        .then(async response => response.json())
+        .then(async result => {
 
-                var child = result[i];
-                
-                var row = table.insertRow();
-                Object.keys(child).forEach(function (k) {
-                    console.log(k);
-                    var cell = row.insertCell();
-                    cell.appendChild(document.createTextNode(child[k]));
-                })
+            for (var i = 0; i < result.parties.length; i++) {
+
+                await actualsItems.splice(actualsItems.indexOf(result.parties[i]),1)
+
+                let data = result.parties[i];
+                var user1 = {};
+                var user2 = {};
+
+                await fetch(`/api/user/${data.J1.id}`)
+                    .then(response => response.json())
+                    .then(result => user1 = result)
+                    .catch(error => console.log('error', error))
+
+                await fetch(`/api/user/${data.J2.id}`)
+                    .then(response => response.json())
+                    .then(result => user2 = result)
+                    .catch(error => console.log('error', error));
+
+                if (document.getElementById(data.id)) {
+                    let item = document.getElementById(data.id);
+                    item.children[1].innerHTML = user1.username;
+                    item.children[2].innerHTML = user2.username;
+                    item.children[0].innerHTML = data.round;
+                }
+                else {
+                    let row = document.createElement('tr');
+                    row.id = data.id;
+
+                    let dataTable = [data.round, user1.username, user2.username, data.id];
+
+                    dataTable.forEach(element => {
+                        let th = document.createElement('th')
+                        if (dataTable[dataTable.length - 1] == element) {
+                            th.className = "text-end"
+                            th.innerHTML = `<a href="/party/${element}" class="btn btn-primary btn-sm">Regarder</a>`;
+                        } else {
+                            th.innerHTML = element;
+                        }
+                        row.appendChild(th);
+                    });
+                    table.appendChild(row)
+                }
+
             }
         })
         .catch(error => console.log('error', error));
+
+    await actualsItems.forEach(actualItem => {
+        let objet = document.getElementById(actualItem);
+        objet.parentNode.removeChild(objet)
+    })
+
+
 }
 
+//Recupérér les parties en attente
+async function getInvites() {
+    const table = document.querySelector('#listInvites');
+    let actualsItems = [];
 
+    for (let index = 0; index < table.children.length; index++) {
+        const element = table.children[index];
+        actualsItems.push(element.id)
+    }
+    console.log("fetch invits...");
+    await fetch("/api/list_parties?type=WAITING")
+        .then( response => response.json())
+        .then(async result => {
+            console.log(result);
+            for (var i = 0; i < result.parties.length; i++) {
+
+                await actualsItems.splice(actualsItems.indexOf(result.parties[i]),1)
+
+                let data = result.parties[i];
+                var user1 = {};
+
+                await fetch(`/api/user/${data.J1.id}`)
+                    .then(response => response.json())
+                    .then(result => user1 = result)
+                    .catch(error => console.log('error', error))
+
+                if (document.getElementById(data.id)) {
+                    let item = document.getElementById(data.id);
+                    item.children[1].innerHTML = user1.username;
+                    item.children[0].innerHTML = data.round;
+                }
+                else {
+                    let row = document.createElement('tr');
+                    row.id = data.id;
+
+                    let dataTable = [data.round, user1.username, data.id];
+
+                    dataTable.forEach(element => {
+                        let th = document.createElement('th')
+                        if (dataTable[dataTable.length - 1] == element) {
+                            th.className = "text-end"
+                            th.innerHTML = `<a href="/party/${element}" class="btn btn-primary btn-sm">Accept</a> <a href="/party/${element}" class="btn btn-primary btn-sm">Decline</a>`;
+                        } else {
+                            th.innerHTML = element;
+                        }
+                        row.appendChild(th);
+                    });
+                    table.appendChild(row)
+                }
+
+            }
+        })
+        .catch(error => console.log('error', error));
+    await actualsItems.forEach(actualItem => {
+        let objet = document.getElementById(actualItem);
+        objet.parentNode.removeChild(objet)
+    })
+
+
+}
+
+async function getOwnedParties() {
+    const table = document.querySelector('#listmyparties');
+    let actualsItems = [];
+
+    for (let index = 0; index < table.children.length; index++) {
+        const element = table.children[index];
+        actualsItems.push(element.id)
+    }
+    
+    await fetch("/api/myparties")
+        .then(async response => response.json())
+        .then(async result => {
+
+            for (var i = 0; i < result.parties.length; i++) {
+
+                await actualsItems.splice(actualsItems.indexOf(result.parties[i]),1)
+
+                let data = result.parties[i];
+                var user1 = {};
+                var user2 = {};
+
+                await fetch(`/api/user/${data.J1.id}`)
+                    .then(response => response.json())
+                    .then(result => user1 = result)
+                    .catch(error => console.log('error', error))
+
+                await fetch(`/api/user/${data.J2.id}`)
+                    .then(response => response.json())
+                    .then(result => user2 = result)
+                    .catch(error => console.log('error', error));
+
+                if (document.getElementById(data.id)) {
+                    let item = document.getElementById(data.id);
+                    item.children[1].innerHTML = user1.username;
+                    item.children[2].innerHTML = user2.username;
+                    item.children[0].innerHTML = data.round;
+                }
+                else {
+                    let row = document.createElement('tr');
+                    row.id = data.id;
+
+                    let dataTable = [data.round, user1.username, user2.username, data.id];
+
+                    dataTable.forEach(element => {
+                        let th = document.createElement('th')
+                        if (dataTable[dataTable.length - 1] == element) {
+                            th.className = "text-end"
+                            th.innerHTML = `<a href="/party/${element}" class="btn btn-primary btn-sm">Delete</a>`;
+                        } else {
+                            th.innerHTML = element;
+                        }
+                        row.appendChild(th);
+                    });
+                    table.appendChild(row)
+                }
+
+            }
+        })
+        .catch(error => console.log('error', error));
+
+    await actualsItems.forEach(actualItem => {
+        let objet = document.getElementById(actualItem);
+        objet.parentNode.removeChild(objet)
+    })
+
+
+}
 //Liste adversaires
 if (document.querySelector("#opposant")) {
     fetch("/api/list_users?no_owner=true")
@@ -74,3 +250,6 @@ if (document.querySelector("#opposant")) {
         })
         .catch(error => console.log('error', error));
 }
+
+
+

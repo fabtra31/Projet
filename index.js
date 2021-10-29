@@ -49,15 +49,12 @@ app.post('/api/sign-up', async function (req, res) {
 		})
 		let result = await user.save()
 
-		console.log(result)
 		if (result) {
 			res.redirect('/login')
-			console.log("a user has been created :")
-			console.log(req.body.username)
+			console.log("a user has been created :" + req.body.username)
 
 		}
 		else {
-			console.log("")
 			res.redirect('/sign-up')
 		}
 
@@ -67,9 +64,7 @@ app.post('/api/sign-up', async function (req, res) {
 // POST pour la connection
 app.post('/api/login', async function (req, res) {
 	await User.findOne({
-		where: {
 			username: req.body.username
-		}
 	})
 		.then(function (user) {
 			if (!user) return res.redirect('/sign-up');
@@ -119,11 +114,12 @@ app.get("/api/list_users", async function (req, res) {
 app.get('/api/list_parties', async function (req, res) {
 	const validStatus = ["WAITING", "STARTED", "FINISHED"];
 	let parameters = {};
-	if (req.query.status && validStatus.includes(req.query.status)){
-		parameters.status = req.query.status;
+	if (req.query.type && validStatus.includes(req.query.type)){
+		parameters.status = req.query.type;
 	}
 	await Parties.find(parameters).then((parties) => {
 		var listParties = [];
+		
 		for (let index = 0; index < parties.length; index++) {
 			const element = parties[index];
 
@@ -144,15 +140,44 @@ app.get('/api/list_parties', async function (req, res) {
 	})
 })
 
+
+// lister les parties crées par le Owner
+app.get('/api/myparties', async function (req, res) {
+	const validStatus = ["WAITING", "STARTED", "FINISHED"];
+	let parameters = {};
+	if (req.query.type && validStatus.includes(req.query.type)){
+		parameters.status = req.query.type;
+	}
+	await Parties.find(parameters).then((parties) => {
+		var listParties = [];
+		
+		for (let index = 0; index < parties.length; index++) {
+			const element = parties[index];
+
+			listParties.push({
+				id: element._id,
+				round: element.round,
+				J1: element.J1,
+				J2: element.J2,
+				specs: element.specs,
+				status: element.status,
+				pointer: element.pointer
+			});
+			if (index == parties.length - 1) {
+				return res.json({ total: parties.lenght, parties: listParties });
+			}
+		}
+		return res.json({ total: parties.lenght, parties: []});
+	})
+})
+
+//GET pour les parties (ID)
 app.get('/api/party/:id', async function (req, res) {
 	if (!req.session.user) {
 		return res.sendStatus(401)
 	}
-	await Parties.findOne({
-		where: {
-			_id: req.params.id
-		}
-	}).then(function (party) {
+	await Parties.findById(req.params.id)
+		.then(function (party) {
 		if (!party){
 			return res.sendStatus(404)
 		}
@@ -160,6 +185,64 @@ app.get('/api/party/:id', async function (req, res) {
 	});
 })
 
+//get pour accepter les invites
+app.get('/party/:id/accept', async function (req, res) {
+	if (!req.session.user) {
+		return res.sendStatus(401)
+	}
+	await Parties.findById(req.params.id)
+		.then(async function (party) {
+		if (!party){
+			return res.sendStatus(404)
+		}
+		if (party.J2.id != req.session.user.id){
+			return res.sendStatus(403)
+		}
+		if (party.status != "WAITING"){
+			return res.sendStatus(403)
+		}
+		await Parties.findByIdAndUpdate(req.params.id, {status: "STARTED"})
+
+		return res.redirect(`/party/${req.params.id}`)
+	});
+})
+
+//get pour decliner les invites
+app.get('/party/:id/deny', async function (req, res) {
+	if (!req.session.user) {
+		return res.sendStatus(401)
+	}
+	await Parties.findById(req.params.id)
+		.then(async function (party) {
+		if (!party){
+			return res.sendStatus(404)
+		}
+		if (party.J2.id != req.session.user.id){
+			return res.sendStatus(403)
+		}
+		if (party.status != "WAITING"){
+			return res.sendStatus(403)
+		}
+		await Parties.findByIdAndUpdate(req.params.id, {status: "CANCELED"})
+
+		return res.redirect("/home")
+	});
+})
+
+app.post('/api/party/:id/delete', async function (req, res) {
+	if (!party){
+		return res.sendStatus(404)
+	}
+	if (party.J2.id != req.session.user.id){
+		return res.sendStatus(403)
+	}
+	if (party.status != "WAITING"){
+		return res.sendStatus(403)
+	}
+	await Parties.findByIdAndDelete(req.params.id)
+	return res.redirect("/home")
+	
+})
 
 app.post('/api/party', async function (req, res) {
 	if (!req.session.user) return res.sendStatus(401);
@@ -199,11 +282,8 @@ app.get('/api/user',async function (req, res) {
 });
 
 app.get('/api/user/:id', async function (req, res) {
-	let parameters = {
-		where: { _id: req.params.id },
-	};
-
-	await User.findOne(parameters).then((user) => {
+	await User.findById(req.params.id)
+	.then((user) => {
 		if (!user) {
 			return res.sendStatus(404)
 		}
@@ -246,7 +326,7 @@ app.get('/home', function (req, res) {
 	if (!req.session.user) {
 		return res.redirect('/login');
 	}
-	res.render("home.ejs", { req: req, title: "Bienvenue sur le jeu Betcha" })
+	res.render("home.ejs", { req: req, title: "Welcome on Betcha game" })
 });
 
 //Get pour les parties 
