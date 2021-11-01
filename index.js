@@ -82,6 +82,9 @@ app.post('/api/login', async function (req, res) {
 
 // GET pour lister les users
 app.get("/api/list_users", async function (req, res) {
+	if (!req.session.user) {
+		return res.sendStatus(401)
+	}
 	await User.find({}).then(function (users) {
 		var listUsers = [];
 
@@ -112,6 +115,9 @@ app.get("/api/list_users", async function (req, res) {
 
 // GET pour lister toutes les parties
 app.get('/api/list_parties', async function (req, res) {
+	if (!req.session.user) {
+		return res.sendStatus(401)
+	}
 	const validStatus = ["WAITING", "STARTED", "FINISHED"];
 	let parameters = {};
 	if (req.query.type && validStatus.includes(req.query.type)){
@@ -143,11 +149,12 @@ app.get('/api/list_parties', async function (req, res) {
 
 // lister les parties crées par le Owner
 app.get('/api/myparties', async function (req, res) {
-	const validStatus = ["WAITING", "STARTED", "FINISHED"];
-	let parameters = {};
-	if (req.query.type && validStatus.includes(req.query.type)){
-		parameters.status = req.query.type;
+	if (!req.session.user) {
+		return res.sendStatus(401)
 	}
+
+	let parameters = {J1: req.session.user.id};
+
 	await Parties.find(parameters).then((parties) => {
 		var listParties = [];
 		
@@ -169,6 +176,45 @@ app.get('/api/myparties', async function (req, res) {
 		}
 		return res.json({ total: parties.lenght, parties: []});
 	})
+})
+
+app.get("/api/invites", async function(req, res) {
+    
+	if (!req.session.user) {
+		return res.sendStatus(401)
+	}
+	let params = {
+        "$and": [
+            { status: "WAITING"}, 
+            {"J2.id": req.session.user.id}
+        ]
+
+    };
+
+
+    await Parties.find(params).then(function (games) {
+        var finalList = [];
+
+        for (let index = 0; index < games.length; index++) {
+            const element = games[index];
+
+            finalList.push({
+                id: element._id,
+                round: element.round,
+                pointer: element.pointer,
+                J1: element.J1,
+				J2: element.J2,
+                specs: element.specs,
+                status: element.status
+            });
+
+            if (index == games.length-1) {
+                return res.json({total: games.length, parties: finalList});
+            }
+        }
+
+        return res.json({total: games.length, parties: []});
+    })
 })
 
 //GET pour les parties (ID)
@@ -223,25 +269,33 @@ app.get('/party/:id/deny', async function (req, res) {
 		if (party.status != "WAITING"){
 			return res.sendStatus(403)
 		}
-		await Parties.findByIdAndUpdate(req.params.id, {status: "CANCELED"})
+		await Parties.findByIdAndDelete(req.params.id)
 
 		return res.redirect("/home")
 	});
 })
 
-app.post('/api/party/:id/delete', async function (req, res) {
-	if (!party){
-		return res.sendStatus(404)
+app.get('/api/party/:id/delete', async function (req, res) {
+	if (!req.session.user) {
+		return res.sendStatus(401)
 	}
-	if (party.J2.id != req.session.user.id){
-		return res.sendStatus(403)
-	}
-	if (party.status != "WAITING"){
-		return res.sendStatus(403)
-	}
-	await Parties.findByIdAndDelete(req.params.id)
-	return res.redirect("/home")
-	
+	await Parties.findById(req.params.id)
+		.then(async function (party) {
+		if (!party){
+			return res.sendStatus(404)
+		}
+
+		if (party.J1.id != req.session.user.id){
+			return res.sendStatus(403)
+		}
+		if (party.status != "WAITING"){
+			return res.sendStatus(501)
+		}
+		await Parties.findByIdAndDelete(req.params.id)
+
+		return res.redirect("/home")
+	});
+
 })
 
 app.post('/api/party', async function (req, res) {

@@ -28,12 +28,14 @@ if (window.location.pathname.startsWith("/home")) {
 
     let new_clock = DateTime.now().set(parameters);
     getParties();
-    getInvites()
+    getInvites();
+    getOwnedParties();
 
     setTimeout(async () => {
         setInterval(async () => {
             await getParties();
             await getInvites();
+            await getOwnedParties();
         }, interval * 1000);
     }, new_clock.diff(DateTime.now()).toObject().milliseconds);
 
@@ -87,7 +89,7 @@ async function getParties() {
                         let th = document.createElement('th')
                         if (dataTable[dataTable.length - 1] == element) {
                             th.className = "text-end"
-                            th.innerHTML = `<a href="/party/${element}" class="btn btn-primary btn-sm">Regarder</a>`;
+                            th.innerHTML = `<a href="/party/${element}" class="btn btn-primary btn-sm">Watch</a>`;
                         } else {
                             th.innerHTML = element;
                         }
@@ -118,7 +120,7 @@ async function getInvites() {
         actualsItems.push(element.id)
     }
     console.log("fetch invits...");
-    await fetch("/api/list_parties?type=WAITING")
+    await fetch("/api/invites")
         .then( response => response.json())
         .then(async result => {
             console.log(result);
@@ -128,20 +130,20 @@ async function getInvites() {
 
                 let data = result.parties[i];
                 var user1 = {};
-
+                console.log(data);
                 await fetch(`/api/user/${data.J1.id}`)
                     .then(response => response.json())
                     .then(result => user1 = result)
                     .catch(error => console.log('error', error))
 
-                if (document.getElementById(data.id)) {
-                    let item = document.getElementById(data.id);
+                if (document.getElementById("invite_"+data.id)) {
+                    let item = document.getElementById("invte_"+data.id);
                     item.children[1].innerHTML = user1.username;
                     item.children[0].innerHTML = data.round;
                 }
                 else {
                     let row = document.createElement('tr');
-                    row.id = data.id;
+                    row.id = "invte_"+data.id;
 
                     let dataTable = [data.round, user1.username, data.id];
 
@@ -200,15 +202,15 @@ async function getOwnedParties() {
                     .then(result => user2 = result)
                     .catch(error => console.log('error', error));
 
-                if (document.getElementById(data.id)) {
-                    let item = document.getElementById(data.id);
+                if (document.getElementById("own_"+data.id)) {
+                    let item = document.getElementById("own_"+data.id);
                     item.children[1].innerHTML = user1.username;
                     item.children[2].innerHTML = user2.username;
                     item.children[0].innerHTML = data.round;
                 }
                 else {
                     let row = document.createElement('tr');
-                    row.id = data.id;
+                    row.id = "own_"+data.id;
 
                     let dataTable = [data.round, user1.username, user2.username, data.id];
 
@@ -216,7 +218,7 @@ async function getOwnedParties() {
                         let th = document.createElement('th')
                         if (dataTable[dataTable.length - 1] == element) {
                             th.className = "text-end"
-                            th.innerHTML = `<a href="/party/${element}" class="btn btn-primary btn-sm">Delete</a>`;
+                            th.innerHTML = `<a href="/api/party/${element}/delete" class="btn btn-primary btn-sm">Delete</a>`;
                         } else {
                             th.innerHTML = element;
                         }
