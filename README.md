@@ -21,8 +21,8 @@ Grille de notation BACK :
 - on ne peut pas supprimer une partie dont on est pas le créateur : **OK**
 
 - chaque joueur possède initialement 100 jetons : **OK**
-- Chaque joueur mise en secret un certain nombre de jetons (entre 0 et 100) : **OK** (fonctionnement aléatoire, pb d'acces à la BD)
-- Celui qui a misé le plus se voit retirer le montant de sa mise de ses jetons, mais voit le lot avancer d'un cran dans sa direction : 3 points
+- Chaque joueur mise en secret un certain nombre de jetons (entre 0 et 100) : **OK**
+- Celui qui a misé le plus se voit retirer le montant de sa mise de ses jetons, mais voit le lot avancer d'un cran dans sa direction : **OK**
 - le joueur qui n'a pas remporté le pari garde sa mise et ne perd aucun jeton : 2 points
 - Les joueurs continuent à parier jusqu'à que le lot arrive sur l'emplacement d'un des joueurs : 1 point
 - Les joueurs continuent à parier jusqu'à que les deux joueurs n'aient plus de jetons : 1 point
@@ -49,7 +49,6 @@ Grille de notation FRONT :
 
 - On voit 11 emplacements contigus : **OK**
 - On voit le nom et nombre de jetons des joueurs : **OK**
-- On peut miser : 3 points
+- On peut miser : **OK**
 - un pari est généré automatiquement après 30 secondes (entre 0 et le nombre de jetons du joueur) : 1 point
-- la partie sera mise à jour sans intervention de l'utilisateur : 3 points
-- On voit le nom du gagnant : 1 point
+- la partie sera mise à jour sans intervention de l'utilisateur : **OK**
