@@ -22,7 +22,7 @@
 		</div>
 	</header>
 	<div class="container">
-		<div class="row text-center mt-5 align-items-center" id="info">
+		<div class="row text-center mt-5 align-items-center">
 			<div class="col">
 				<h2>
 					<%= usernames[0] %>
@@ -30,17 +30,19 @@
 			</div>
 			<div class="col">
 				<h5>
-					<%= party.J1.coins %>💰
+					<%= party.J1.coins %> 💰
 				</h5>
 			</div>
 			<div class="col"></div>
 			<div class="col"></div>
-			<div class="col-3"></div>
+			<div id="info" class="col-3">
+				<h4></h4>
+			</div>
 			<div class="col"></div>
 			<div class="col"></div>
 			<div class="col">
 				<h5>
-					<%= party.J2.coins %>💰
+					<%= party.J2.coins %> 💰
 				</h5>
 			</div>
 			<div class="col">
@@ -55,14 +57,14 @@
 				<div class="col-sm">
 					<button id="buttonJ1" type="button" class="btn btn-primary">Bet</button>
 				</div>
-				<div id="J1_bet" class="col-sm">
-					<input type="number" class="form-control" id="" placeholder="" value="" required="" min="1"
+				<div class="col-sm">
+					<input type="number" class="form-control" id="J1bet" placeholder="" value="" required="" min="1"
 						max="100" max="100">
 				</div>
 				<div class="col-sm">
 				</div>
 				<div id="J2_bet" class="col-sm">
-					<input type="number" class="form-control" id="" placeholder="" value="" required="" min="1"
+					<input type="number" class="form-control" id="J2bet" placeholder="" value="" required="" min="1"
 						max="100">
 				</div>
 				<div class="col-sm">
@@ -80,7 +82,9 @@
 					<th scope="col"></th>
 					<th scope="col"></th>
 					<th scope="col"></th>
-					<th scope="col"></th>
+					<th scope="col">
+						<h1>🟥</h1>
+					</th>
 					<th scope="col"></th>
 					<th scope="col"></th>
 					<th scope="col"></th>
@@ -91,12 +95,17 @@
 			<tbody>
 			</tbody>
 		</table>
+		<br>
 	</div>
+	
+
 
 	<script>
+		//Check si le user est un joueur ou un spectateur
 		const isPlayer = '<%= isplayer %>';
 		const user = '<%= req.session.user.id %>';
 	</script>
+
 	<script src="https://moment.github.io/luxon/global/luxon.min.js"></script>
 	<script src="/assets/js/party.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"

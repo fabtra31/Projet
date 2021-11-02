@@ -7,6 +7,7 @@ const sessions = require("express-session");
 const cookieParser = require("cookie-parser");
 const mongoose = require("mongoose");
 const path = require("path");
+const { DateTime } = require("luxon");
 
 // Initialisation connexion DB
 
@@ -444,8 +445,65 @@ app.listen(4000, () => {
 	console.log("Serveur démarré sur le port 4000")
 })
 
+app.post("/api/party/:id/secretNumber", async function (req, res) {
+    if (!req.session.user) return res.sendStatus(401);
+    await Parties.findById(req.params.gameID).then(async function (game) {
+        if (!game) return res.sendStatus(404);
+		if (game.status != "ON_GOING") return res.sendStatus(403);
+
+        if (game.J1.id == req.session.user.id) {
+			await Parties.findByIdAndUpdate(req.params.gameID, {
+				"J1.mise": req.body.nb
+			});
+		} else if (game.J2.id == req.session.user.id) {
+			await Parties.findByIdAndUpdate(req.params.gameID, {
+				"J2.mise": req.body.nb
+			});
+		} else {
+			return res.sendStatus(403);
+		}
+
+        return res.json({success: true});
+    });
+});
+
+setInterval(async () => {
+
+	await checkConnected();
+
+	await refreshParty();
+}, 2000)
+
+async function checkConnected() {
+	let games = await Parties.find({ 
+		"$or": [
+			{"J1.connected": true}, 
+			{"J2.connected": true}
+		]
+	})
+
+	games.forEach(async (game) => {
+		if (game.J1.connected) {
+			console.log(DateTime.now());
+			if (DateTime.now().diff(DateTime.fromJSDate(game.J1.last_update), 'seconds').toObject().seconds > 5) {
+				game.J1.connected = false;
+			}
+		}
+		
+		if (game.J2.connected) {
+			if (DateTime.now().diff(DateTime.fromJSDate(game.J2.last_update), 'seconds').toObject().seconds > 5) {
+				game.J2.connected = false;
+			}
+		}
+
+		await game.save();
+	})
+}
 
 async function refreshParty() {
+	let games = await Parties.find({ 
+		status: "ON_GOING"
+	})
 	await games.forEach(async (game) => {
 		console.log(game.event);
 		if (game.event == "wait" && game.J1.connected && game.J2.connected) {
@@ -478,9 +536,6 @@ async function refreshParty() {
 				})
 			}
 		} else if (game.event == "show_result") {
-
-
-
 		}
 	})
 }
