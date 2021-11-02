@@ -315,6 +315,29 @@ app.post('/api/party', async function (req, res) {
 	return res.redirect("/home");
 })
 
+app.post("/api/party/:id/heartbeat", async function (req, res) {
+    if (!req.session.user) return res.sendStatus(401);
+    await Parties.findById(req.params.id).then(async function (game) {
+        if (!game) return res.sendStatus(404);
+		if (game.status == "FINISHED") return res.sendStatus(403);
+
+        if (game.J1.id == req.session.user.id) {
+			await Parties.findByIdAndUpdate(req.params.id, {
+				"J1.connected": true,
+				"J1.last_update": Date.now()
+			});
+		} else {
+			await Parties.findByIdAndUpdate(req.params.id, {
+				"J2.connected": true,
+				"J2.last_update": Date.now()
+			});
+		}
+        
+		
+        
+        return res.json({success: true});
+    });
+});
 
 app.get('/api/user',async function (req, res) {
 	if (!req.session.user) return res.sendStatus(401);
@@ -386,17 +409,27 @@ app.get('/home', function (req, res) {
 //Get pour les parties 
 app.get('/party/:id', async function (req, res) {
 	if (!req.session.user) {
-		return res.redirect('/login')
+		return res.redirect('/login');
 	}
+
 	await Parties.findOne({
-		where: {
 			_id: req.params.id
-		}
-	}).then(function (party) {
+	}).then(async function (party) {
 		if (!party){
-			return res.redirect('/home')
+			return res.redirect('/home');
 		}
-		return res.render("party.ejs", { req: req, title: "Partie J1 Vs J2" })
+		let user1 = await User.findById(party.J1.id);
+		let user2 = await User.findById(party.J2.id);
+
+		let type = null
+
+		if (user1.id ==  req.session.user.id || user2.id == req.session.user.id) {
+			type = true;
+		}
+		else{
+			type = false;
+		}
+		return res.render("party.ejs", { req: req, title: "Game of "+user1.username+ " and " + user2.username, party: party, isplayer: type, usernames: [user1.username, user2.username]})
 	});
 })
 
@@ -409,5 +442,45 @@ app.get('/logout', function (req, res) {
 
 app.listen(4000, () => {
 	console.log("Serveur démarré sur le port 4000")
+})
+
+
+async function refreshParty() {
+	await games.forEach(async (game) => {
+		console.log(game.event);
+		if (game.event == "wait" && game.J1.connected && game.J2.connected) {
+			await Game.findByIdAndUpdate(game._id, {
+				event: "starting",
+				next_event: DateTime.now().plus({seconds: 30}).set({millisecond: 0}).toJSDate()
+			})
+		} else if (game.event == "starting") {
+			await Parties.findByIdAndUpdate(game._id, {
+				event: "wait_init"
+			})
+		} else if (game.event == "wait_init") {
+			if (DateTime.now() >= DateTime.fromJSDate(new Date(game.next_event))) {
+				await Parties.findByIdAndUpdate(game._id, {
+					event: "startRound",
+					next_event: DateTime.now().plus({seconds: 30}).set({millisecond: 0}).toJSDate()
+				})
+			}
+		} else if (game.event == "startRound") {
+			await Parties.findByIdAndUpdate(game._id, {
+				'J1.mise': 0,
+				'J2.mise': 0,
+				event: "wait_endRound"
+			})
+		} else if (game.event == "wait_endRound") {
+			if (DateTime.now() >= DateTime.fromJSDate(new Date(game.next_event))) {
+				await Parties.findByIdAndUpdate(game._id, {
+					event: "show_result",
+					next_event: DateTime.now().plus({seconds: 15}).set({millisecond: 0}).toJSDate()
+				})
+			}
+		} else if (game.event == "show_result") {
+
+
+
+		}
+	})
 }
-)

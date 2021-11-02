@@ -1,4 +1,4 @@
-const DateTime = luxon.DateTime;
+let DateTime = luxon.DateTime;
 
 
 //Partie timer INTO refresh page
@@ -106,11 +106,24 @@ async function getParties() {
         let objet = document.getElementById(actualItem);
         objet.parentNode.removeChild(objet)
     })
+//Recupérér les parties en attente
 
-
+//Liste adversaires
+if (document.querySelector("#opposant")) {
+    fetch("/api/list_users?no_owner=true")
+        .then(response => response.json())
+        .then(result => {
+            result.users.forEach(user => {
+                let option = document.createElement("option")
+                option.value = user.id;
+                option.innerHTML = user.username;
+                document.querySelector("#opposant").appendChild(option);
+            })
+        })
+        .catch(error => console.log('error', error));
 }
 
-//Recupérér les parties en attente
+}
 async function getInvites() {
     const table = document.querySelector('#listInvites');
     let actualsItems = [];
@@ -238,20 +251,7 @@ async function getOwnedParties() {
 
 
 }
-//Liste adversaires
-if (document.querySelector("#opposant")) {
-    fetch("/api/list_users?no_owner=true")
-        .then(response => response.json())
-        .then(result => {
-            result.users.forEach(user => {
-                let option = document.createElement("option")
-                option.value = user.id;
-                option.innerHTML = user.username;
-                document.querySelector("#opposant").appendChild(option);
-            })
-        })
-        .catch(error => console.log('error', error));
-}
+
 
 
 

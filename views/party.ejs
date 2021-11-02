@@ -24,10 +24,14 @@
 	<div class="container">
 		<div class="row text-center mt-5 align-items-center" id="info">
 			<div class="col">
-				<h2></h2>
+				<h2>
+					<%= usernames[0] %>
+				</h2>
 			</div>
 			<div class="col">
-				<h5> 💰</h5>
+				<h5>
+					<%= party.J1.coins %>💰
+				</h5>
 			</div>
 			<div class="col"></div>
 			<div class="col"></div>
@@ -35,20 +39,25 @@
 			<div class="col"></div>
 			<div class="col"></div>
 			<div class="col">
-				<h5> 💰</h5>
+				<h5>
+					<%= party.J2.coins %>💰
+				</h5>
 			</div>
 			<div class="col">
-				<h2></h2>
+				<h2>
+					<%= usernames[1] %>
+				</h2>
 			</div>
 		</div>
 		<br>
-		<div class="container-sm text-center">
-			<div class="row">
+		<div id="input-value-row" class="container-sm text-center">
+			<div id="imput-value" class="row">
 				<div class="col-sm">
+					<button id="buttonJ1" type="button" class="btn btn-primary">Bet</button>
 				</div>
 				<div id="J1_bet" class="col-sm">
-					<input type="number" class="form-control" id="" placeholder="" value="" required="" min="1" min="1"
-						max="100">
+					<input type="number" class="form-control" id="" placeholder="" value="" required="" min="1"
+						max="100" max="100">
 				</div>
 				<div class="col-sm">
 				</div>
@@ -57,12 +66,13 @@
 						max="100">
 				</div>
 				<div class="col-sm">
+					<button id="buttonJ2" type="button" class="btn btn-primary">Bet</button>
 				</div>
 			</div>
 		</div>
 		<br>
 		<br>
-		<table class="text-center table table-bordered">
+		<table id="table-game" class="text-center table table-bordered">
 			<thead>
 				<tr>
 					<th scope="col"></th>
@@ -82,3 +92,14 @@
 			</tbody>
 		</table>
 	</div>
+
+	<script>
+		const isPlayer = '<%= isplayer %>';
+		const user = '<%= req.session.user.id %>';
+	</script>
+	<script src="https://moment.github.io/luxon/global/luxon.min.js"></script>
+	<script src="/assets/js/party.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"
+		integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p"
+		crossorigin="anonymous"></script>
+</body>
