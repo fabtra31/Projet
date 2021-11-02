@@ -164,7 +164,7 @@ async function getInvites() {
                         let th = document.createElement('th')
                         if (dataTable[dataTable.length - 1] == element) {
                             th.className = "text-end"
-                            th.innerHTML = `<a href="/party/${element}" class="btn btn-primary btn-sm">Accept</a> <a href="/party/${element}" class="btn btn-primary btn-sm">Decline</a>`;
+                            th.innerHTML = `<a href="/party/${element}/accept" class="btn btn-primary btn-sm">Accept</a> <a href="/party/${element}/deny" class="btn btn-primary btn-sm">Decline</a>`;
                         } else {
                             th.innerHTML = element;
                         }

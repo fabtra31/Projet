@@ -22,7 +22,7 @@
 		</div>
 	</header>
 	<div class="container">
-		<div class="row text-center mt-5 align-items-center">
+		<div class="row text-center mt-5 align-items-center" id="info">
 			<div class="col">
 				<h2>
 					<%= usernames[0] %>
@@ -54,42 +54,39 @@
 		<br>
 		<div id="input-value-row" class="container-sm text-center">
 			<div id="imput-value" class="row">
-				<div class="col-sm">
-					<button id="buttonJ1" type="button" class="btn btn-primary">Bet</button>
-				</div>
-				<div class="col-sm">
+				<div id="J1_bet" class="col-sm">
 					<input type="number" class="form-control" id="J1bet" placeholder="" value="" required="" min="1"
 						max="100" max="100">
+						<br>
+					<button id="buttonJ1" type="button" class="btn btn-primary">Bet</button>
 				</div>
-				<div class="col-sm">
-				</div>
+				<div class="col-sm"></div>
+				<div class="col-sm"></div>
+				<div class="col-sm"></div>
 				<div id="J2_bet" class="col-sm">
 					<input type="number" class="form-control" id="J2bet" placeholder="" value="" required="" min="1"
-						max="100">
+						max="100"><br>
+						<button id="buttonJ2" type="button" class="btn btn-primary">Bet</button>
 				</div>
-				<div class="col-sm">
-					<button id="buttonJ2" type="button" class="btn btn-primary">Bet</button>
-				</div>
+				
 			</div>
 		</div>
 		<br>
 		<br>
 		<table id="table-game" class="text-center table table-bordered">
 			<thead>
-				<tr>
-					<th scope="col"></th>
-					<th scope="col"></th>
-					<th scope="col"></th>
-					<th scope="col"></th>
-					<th scope="col"></th>
-					<th scope="col">
-						<h1>🟥</h1>
-					</th>
-					<th scope="col"></th>
-					<th scope="col"></th>
-					<th scope="col"></th>
-					<th scope="col"></th>
-					<th scope="col"></th>
+				<tr id="bar">
+					<th scope="col"><%= (party.pointer == 0) ? "🟥" : "" %></th>
+					<th scope="col"><%= (party.pointer == 1) ? "🟥" : "" %></th>
+					<th scope="col"><%= (party.pointer == 2) ? "🟥" : "" %></th>
+					<th scope="col"><%= (party.pointer == 3) ? "🟥" : "" %></th>
+					<th scope="col"><%= (party.pointer == 4) ? "🟥" : "" %></th>
+					<th scope="col"><%= (party.pointer == 5) ? "🟥" : "" %></th>
+					<th scope="col"><%= (party.pointer == 6) ? "🟥" : "" %></th>
+					<th scope="col"><%= (party.pointer == 7) ? "🟥" : "" %></th>
+					<th scope="col"><%= (party.pointer == 8) ? "🟥" : "" %></th>
+					<th scope="col"><%= (party.pointer == 9) ? "🟥" : "" %></th>
+					<th scope="col"><%= (party.pointer == 10) ? "🟥" : "" %></th>
 				</tr>
 			</thead>
 			<tbody>

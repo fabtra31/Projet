@@ -29,6 +29,7 @@ app.use(express.static('views'))
 app.set('view engine', 'ejs')
 app.use("/", express.static(path.resolve(`${process.cwd()}${path.sep}assets`)));
 app.use(cookieParser());
+app.use(express.json())
 
 // PARTIE SESSIONS
 const oneDay = 1000 * 60 * 60 * 24;
@@ -248,6 +249,7 @@ app.get('/party/:id/accept', async function (req, res) {
 		if (party.status != "WAITING"){
 			return res.sendStatus(403)
 		}
+
 		await Parties.findByIdAndUpdate(req.params.id, {status: "STARTED"})
 
 		return res.redirect(`/party/${req.params.id}`)
@@ -447,17 +449,17 @@ app.listen(4000, () => {
 
 app.post("/api/party/:id/secretNumber", async function (req, res) {
     if (!req.session.user) return res.sendStatus(401);
-    await Parties.findById(req.params.gameID).then(async function (game) {
+    await Parties.findById(req.params.id).then(async function (game) {
         if (!game) return res.sendStatus(404);
-		if (game.status != "ON_GOING") return res.sendStatus(403);
-
+		if (game.status != "STARTED") return res.sendStatus(403);
+		
         if (game.J1.id == req.session.user.id) {
-			await Parties.findByIdAndUpdate(req.params.gameID, {
-				"J1.mise": req.body.nb
+			await Parties.findByIdAndUpdate(req.params.id, {
+				"J1.bet": req.body.nb
 			});
 		} else if (game.J2.id == req.session.user.id) {
-			await Parties.findByIdAndUpdate(req.params.gameID, {
-				"J2.mise": req.body.nb
+			await Parties.findByIdAndUpdate(req.params.id, {
+				"J2.bet": req.body.nb
 			});
 		} else {
 			return res.sendStatus(403);
@@ -484,7 +486,6 @@ async function checkConnected() {
 
 	games.forEach(async (game) => {
 		if (game.J1.connected) {
-			console.log(DateTime.now());
 			if (DateTime.now().diff(DateTime.fromJSDate(game.J1.last_update), 'seconds').toObject().seconds > 5) {
 				game.J1.connected = false;
 			}
@@ -502,12 +503,12 @@ async function checkConnected() {
 
 async function refreshParty() {
 	let games = await Parties.find({ 
-		status: "ON_GOING"
+		status: "STARTED"
 	})
 	await games.forEach(async (game) => {
 		console.log(game.event);
 		if (game.event == "wait" && game.J1.connected && game.J2.connected) {
-			await Game.findByIdAndUpdate(game._id, {
+			await Parties.findByIdAndUpdate(game._id, {
 				event: "starting",
 				next_event: DateTime.now().plus({seconds: 30}).set({millisecond: 0}).toJSDate()
 			})
@@ -536,6 +537,72 @@ async function refreshParty() {
 				})
 			}
 		} else if (game.event == "show_result") {
+
+			let miseJ1 = 0;
+            let miseJ2 = 0;
+
+            if (game.J1.bet == 0) {
+                miseJ1 = Math.floor(Math.random() * game.J1.coins);
+                await Parties.findByIdAndUpdate(game._id, {
+                    "J1.bet": miseJ1
+                })
+            } else {
+                miseJ1 = game.J1.bet
+            }
+
+            if (game.J2.bet == 0) {
+                miseJ2 = Math.floor(Math.random() * game.J1.coins);
+                await Parties.findByIdAndUpdate(game._id, {
+                    "J2.bet": miseJ2
+                })
+            } else {
+                miseJ2 = game.J2.bet
+            }
+
+            if (miseJ1 > miseJ2) {
+
+                let new_pointer = game.pointer + 1;
+                let next_round = game.round + 1;
+                let new_thune = ((game.J1.coins - game.J1.bet) <= 0) ? 0 : game.J1.coins - game.J1.bet;
+
+
+                await Parties.findByIdAndUpdate(game._id, {
+                    "pointer": new_pointer,
+                    "round": next_round,
+                    "J1.coins": new_thune
+                })
+            } else if (miseJ1 < miseJ2 ) {
+
+                let new_pointer = game.pointer - 1;
+                let next_round = game.round +1;
+                let new_thune = ((game.J2.coins - game.J2.bet) <= 0) ? 0 : game.J2.coins - game.J2.bet;
+
+
+                await Parties.findByIdAndUpdate(game._id, {
+                    "pointer": new_pointer,
+                    "round": next_round,
+                    "J2.coins": new_thune
+                })
+                
+            } else if (miseJ1 == miseJ2) {
+
+                let new_pointer = game.pointer;
+                let next_round = game.round +1;
+
+                await Parties.findByIdAndUpdate(game._id, {
+                    "pointer": new_pointer,
+                    "round": next_round,
+                })
+
+            }
+			
+			await Parties.findByIdAndUpdate(game._id, {
+                "event": 'end_round',
+                "next_event": DateTime.now().plus({seconds: 15}).set({millisecond: 0}).toJSDate(),
+            })
+
+		} else if (game.event == "end_round") {
+			
 		}
 	})
 }
